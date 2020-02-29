@@ -1,4 +1,7 @@
 """ [{"timestamp": "1470016004000", "lat": 520611354, "lon": 44134579}, """
+import numpy
+import geopy.distance
+import csv
 
 class TimelineAnal(object):
     """docstring for TimelineAnal."""
@@ -14,15 +17,12 @@ class TimelineAnal(object):
 
     def getAnalResults(): return analData
 
-    def getClosest(self, num, secondTimelineDictKeys):
-        secondTimelineDictKeysList = list(secondTimelineDictKeys)
-        secondTimelineDictKeysToIntList = []
-
-        # Omzetten naar list met int's ipv str's
-        for dict_key in secondTimelineDictKeysList:
-            secondTimelineDictKeysToIntList.append(int(dict_key))
-
-        return min(secondTimelineDictKeysToIntList,key=lambda x:abs(x-int(num)))
+    def getClosestSecondTimelineTimestamp(self, value, array):
+        idx = numpy.searchsorted(array, value, side="left")
+        if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
+            return array[idx-1]
+        else:
+            return array[idx]
 
     def anal(self):
         firstTimelineLowestTimestamp = self.firstTimeline.timelinedata[len(self.firstTimeline.timelinedata)-1]['timestamp'];
@@ -50,35 +50,31 @@ class TimelineAnal(object):
                 continue # Stay within min and max boundaries
             secondTimelineData[secondTimeline_item['timestamp']] = secondTimeline_item
 
-        # Data gaat op timestamps van HOOG naar LAAG zodat er gestopt kan worden als het voorbij timeframe is
-        """
-        1. voor elke item in first timeline
-        1a. vind closest timestamp in uit second timeline
-        1b. haal geoinfo uit first timeline
-        1b. haal geoinfo uit second timeline
-        1b. bepaal afstand dmv co-ords
-        1b. append gegevens in analData variable
-        """
         count = 0
         for firstTimeline_idx, firstTimeline_item in firstTimelineData.items():
             count = count + 1
             print(str(count) + " / " + str(len(firstTimelineData.items())))
-            # print()
 
             firstTimelineTimestamp = firstTimeline_idx
-            secondTimelineTimestamp = self.getClosest(firstTimelineTimestamp, secondTimelineData.keys())
+            secondTimelineTimestamp = self.getClosestSecondTimelineTimestamp(firstTimelineTimestamp, list(secondTimelineData.keys()))
 
-            firstTimelineLat = firstTimeline_item['lat']
-            firstTimelineLon = firstTimeline_item['lon']
-            secondTimelineLat = secondTimelineData[str(secondTimelineTimestamp)]['lat']
-            secondTimelineLon = secondTimelineData[str(secondTimelineTimestamp)]['lon']
+            firstTimelineLat = float(str(firstTimeline_item['lat'])[:-7] + '.' + str(firstTimeline_item['lat'])[-7:])
+            firstTimelineLon = float(str(firstTimeline_item['lon'])[:-7] + '.' + str(firstTimeline_item['lon'])[-7:])
+            secondTimelineLat = float(str(secondTimelineData[str(secondTimelineTimestamp)]['lat'])[:-7] + '.' + str(secondTimelineData[str(secondTimelineTimestamp)]['lat'])[-7:])
+            secondTimelineLon = float(str(secondTimelineData[str(secondTimelineTimestamp)]['lon'])[:-7] + '.' + str(secondTimelineData[str(secondTimelineTimestamp)]['lon'])[-7:])
 
             # get average timestamp
             averageTimestamp = str( round( (int(firstTimelineTimestamp) + int(secondTimelineTimestamp)) / 2 ) )
 
-            # get avg distance
-            distance = 100
+            # get avg distance (in meters)
 
+            # print(str(44134584))
+            # print(str(44134584)[:-6] + '.' + str(44134584)[-6:])
+
+            coords_1 = (firstTimelineLat,firstTimelineLon)
+            coords_2 = (secondTimelineLat,secondTimelineLon)
+
+            distance = geopy.distance.distance(coords_1, coords_2).km
 
             analData.append([
                 averageTimestamp,
@@ -88,6 +84,13 @@ class TimelineAnal(object):
                 secondTimelineLat,
                 secondTimelineLon
             ])
+
+            print(analData)
+            if count == 100:
+                with open('dataexport/export.csv', 'w', newline='') as myfile:
+                    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+                    wr.writerows(analData)
+                break
 
 
         ## measure distance per TIMEFRAME
