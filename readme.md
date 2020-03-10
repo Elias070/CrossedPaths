@@ -8,3 +8,5 @@ Compare the Google Timeline locations and find out how many times you guys bumpe
 NumPy,
 GeoPy
 -- pip3 intall [module] voor windows
+
+# Functionality

@@ -6,23 +6,28 @@ import csv
 class TimelineAnal(object):
     """docstring for TimelineAnal."""
 
-    analData = None
+    analData                = None
+    closestTogether         = 0
+    farthestFromEachother   = 2147483647
 
     def __init__(self, firstTimeline, secondTimeline):
         super(TimelineAnal, self).__init__()
         self.firstTimeline = firstTimeline
         self.secondTimeline = secondTimeline
-
         self.anal()
 
-    def getAnalResults(): return analData
+    # GETTERS & SETTERS
+    def getAnalResults():           return analData
+    def getClosestTogether():       return closestTogether
+    def getFarthestFromEachother(): return farthestFromEachother
+    def getAnalResults():           return analData
 
-    def getClosestSecondTimelineTimestamp(self, value, array):
-        idx = numpy.searchsorted(array, value, side="left")
-        if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
-            return array[idx-1]
+    def getClosestSecondTimelineTimestamp(self, firstTimelineTimestamp, secondTimelineTimestamps):
+        idx = numpy.searchsorted(secondTimelineTimestamps, firstTimelineTimestamp, side="left")
+        if idx > 0 and (idx == len(secondTimelineTimestamps) or math.fabs(firstTimelineTimestamp - secondTimelineTimestamps[idx-1]) < math.fabs(firstTimelineTimestamp - secondTimelineTimestamps[idx])):
+            return secondTimelineTimestamps[idx-1]
         else:
-            return array[idx]
+            return secondTimelineTimestamps[idx]
 
     def anal(self):
         firstTimelineLowestTimestamp = self.firstTimeline.timelinedata[len(self.firstTimeline.timelinedata)-1]['timestamp'];
@@ -64,18 +69,14 @@ class TimelineAnal(object):
             secondTimelineLon = float(str(secondTimelineData[str(secondTimelineTimestamp)]['lon'])[:-7] + '.' + str(secondTimelineData[str(secondTimelineTimestamp)]['lon'])[-7:])
 
             # get average timestamp
-            averageTimestamp = str( round( (int(firstTimelineTimestamp) + int(secondTimelineTimestamp)) / 2 ) )
+            averageTimestamp = str(round((int(firstTimelineTimestamp) + int(secondTimelineTimestamp)) / 2))
 
-            # get avg distance (in meters)
-
-            # print(str(44134584))
-            # print(str(44134584)[:-6] + '.' + str(44134584)[-6:])
-
+            # get avg distance
             coords_1 = (firstTimelineLat,firstTimelineLon)
             coords_2 = (secondTimelineLat,secondTimelineLon)
-
             distance = geopy.distance.distance(coords_1, coords_2).km
 
+            # Add data to analization
             analData.append([
                 averageTimestamp,
                 distance,
@@ -86,15 +87,17 @@ class TimelineAnal(object):
             ])
 
             print(analData)
+
+            ### DEFINE VARIABLES
+            if distance < self.closestTogether:
+                self.closestTogether = distance
+
+            if distance > self.farthestFromEachother:
+                self.farthestFromEachother = distance
+
+            # Stop after 100 write file en close file
             if count == 100:
                 with open('dataexport/export.csv', 'w', newline='') as myfile:
                     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                     wr.writerows(analData)
                 break
-
-
-        ## measure distance per TIMEFRAME
-        ## get basic variables pre rendered
-        ##  -> closest
-        ##  -> farest
-        ##  -> percentage together/not together in bar-statistic within (n) distance

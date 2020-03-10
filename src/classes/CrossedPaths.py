@@ -1,5 +1,8 @@
-""" [{"timestamp": "1470016004000", "lat": 520611354, "lon": 44134579}, """
-
+""" ###  Do dome checks
+    1. moet from EN date gevuld hebben anders mag niet error ga maar dood klootzak
+    2. data is georderd op timestamp DESC
+    -> percentage together/not together in bar-statistic within (n) distance
+"""
 from classes.Timeline import Timeline
 from classes.TimelineAnal import TimelineAnal
 
@@ -27,7 +30,3 @@ class CrossedPaths(object):
         self.secondTimeline     = Timeline(secondTimelineName)
 
         self.timelineAnal       = TimelineAnal(self.firstTimeline, self.secondTimeline)
-
-        # do dome checks
-        # 1. moet from EN date gevuld hebben anders mag niet error ga maar dood klootzak
-        # 2. data is georderd op timestamp DESC
