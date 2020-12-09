@@ -1,4 +1,3 @@
-""" [{"timestamp": "1470016004000", "lat": 520611354, "lon": 44134579}, """
 import numpy
 import geopy.distance
 import csv
@@ -22,40 +21,55 @@ class TimelineAnal(object):
     def getFarthestFromEachother(): return farthestFromEachother
     def getAnalResults():           return analData
 
-    def getClosestSecondTimelineTimestamp(self, firstTimelineTimestamp, secondTimelineTimestamps):
-        idx = numpy.searchsorted(secondTimelineTimestamps, firstTimelineTimestamp, side="left")
-        if idx > 0 and (idx == len(secondTimelineTimestamps) or math.fabs(firstTimelineTimestamp - secondTimelineTimestamps[idx-1]) < math.fabs(firstTimelineTimestamp - secondTimelineTimestamps[idx])):
-            return secondTimelineTimestamps[idx-1]
-        else:
-            return secondTimelineTimestamps[idx]
-
     def anal(self):
         firstTimelineLowestTimestamp = self.firstTimeline.timelinedata[len(self.firstTimeline.timelinedata)-1]['timestamp'];
         firstTimelineHighestTimestamp = self.firstTimeline.timelinedata[0]['timestamp'];
         secondTimelineLowestTimestamp = self.secondTimeline.timelinedata[len(self.secondTimeline.timelinedata)-1]['timestamp'];
         secondTimelineHighestTimestamp = self.secondTimeline.timelinedata[0]['timestamp'];
 
-        minTimestamp = firstTimelineLowestTimestamp if secondTimelineLowestTimestamp < firstTimelineLowestTimestamp else secondTimelineLowestTimestamp
-        maxTimestamp = firstTimelineHighestTimestamp if secondTimelineHighestTimestamp > firstTimelineHighestTimestamp else secondTimelineHighestTimestamp
 
-        analData = [['AVG_TIMESTAMP', 'DISTANCE', 'LAT_1','LON_1','LAT_2','LON_2']]
-        collection = []
+        # minTimestamp = firstTimelineLowestTimestamp if secondTimelineLowestTimestamp < firstTimelineLowestTimestamp else secondTimelineLowestTimestamp
+        # maxTimestamp = firstTimelineHighestTimestamp if secondTimelineHighestTimestamp > firstTimelineHighestTimestamp else secondTimelineHighestTimestamp
+
+        minTimestamp = firstTimelineLowestTimestamp
+        maxTimestamp = firstTimelineHighestTimestamp
+
+        if minTimestamp < secondTimelineLowestTimestamp:
+            minTimestamp = secondTimelineLowestTimestamp
+
+        if maxTimestamp > secondTimelineHighestTimestamp:
+            maxTimestamp = secondTimelineHighestTimestamp
 
         # list to dict met timestamp als key
         firstTimelineData = {}
         for firstTimeline_idx, firstTimeline_item in enumerate(self.firstTimeline.timelinedata):
-            if int(firstTimeline_item['timestamp']) < int(minTimestamp) or int(firstTimeline_item['timestamp']) > int(maxTimestamp):
-                continue; # Stay within min and max boundaries
+            if int(firstTimeline_item['timestamp']) < int(minTimestamp):
+                continue; # Stay within min boundaries
+
+            if int(firstTimeline_item['timestamp']) > int(maxTimestamp):
+                continue; # Stay within max boundaries
+
             firstTimelineData[firstTimeline_item['timestamp']] = firstTimeline_item
 
         # list to dict met timestamp als key
         secondTimelineData = {}
         for secondTimeline_idx, secondTimeline_item in enumerate(self.secondTimeline.timelinedata):
-            if int(secondTimeline_item['timestamp']) > int(maxTimestamp) or int(secondTimeline_item['timestamp']) > int(maxTimestamp):
-                continue # Stay within min and max boundaries
+            if int(secondTimeline_item['timestamp']) < int(minTimestamp):
+                continue # Stay within min boundaries
+
+            if int(secondTimeline_item['timestamp']) > int(maxTimestamp):
+                continue # Stay within max boundaries
+
             secondTimelineData[secondTimeline_item['timestamp']] = secondTimeline_item
 
+
+
+        # CLUSTER PER HOUR
+        # for firstTimeline_idx, firstTimeline_item in firstTimelineData.items():
+
+
         count = 0
+        analData = [['AVG_TIMESTAMP', 'DISTANCE', 'LAT_1','LON_1','LAT_2','LON_2']]
         for firstTimeline_idx, firstTimeline_item in firstTimelineData.items():
             count = count + 1
             print(str(count) + " / " + str(len(firstTimelineData.items())))
@@ -101,3 +115,10 @@ class TimelineAnal(object):
                     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
                     wr.writerows(analData)
                 break
+
+def getClosestSecondTimelineTimestamp(self, firstTimelineTimestamp, secondTimelineTimestamps):
+    idx = numpy.searchsorted(secondTimelineTimestamps, firstTimelineTimestamp, side="left")
+    if idx > 0 and (idx == len(secondTimelineTimestamps) or math.fabs(firstTimelineTimestamp - secondTimelineTimestamps[idx-1]) < math.fabs(firstTimelineTimestamp - secondTimelineTimestamps[idx])):
+        return secondTimelineTimestamps[idx-1]
+    else:
+        return secondTimelineTimestamps[idx]
